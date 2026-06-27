@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>European L/S Equity Alpha Fund — Hormuz Stress Dashboard (Master)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy:        #0D1F35;
+    --navy-mid:    #1A365D;
+    --navy-light:  #243B55;
+    --navy-card:   #162944;
+    --navy-border: #1E3A5F;
+    --orange:      #D69E2E;
+    --orange-hot:  #DD6B20;
+    --orange-glow: rgba(214,158,46,0.18);
+    --green:       #2F855A;
+    --green-light: #38A169;
+    --green-glow:  rgba(47,133,90,0.18);
+    --red:         #C53030;
+    --red-light:   #E53E3E;
+    --red-glow:    rgba(197,48,48,0.18);
+    --text-primary:   #E8EDF5;
+    --text-secondary: #8FA3BF;
+    --text-muted:     #4A6080;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --nav-width: 260px;
+    --ticker-h: 42px;
+    --header-h: 56px;
+    --transition: 0.18s cubic-bezier(0.4,0,0.2,1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    background: var(--navy);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--navy); }
+  ::-webkit-scrollbar-thumb { background: var(--navy-border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--orange); }
+
+  /* HEADER */
+  #header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: var(--navy-mid);
+    border-bottom: 1px solid var(--navy-border);
+    display: flex;
+    align-items: center;
+    z-index: 1000;
+    padding: 0 16px;
+    gap: 12px;
+  }
+  #header .logo-block {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    min-width: 220px;
+  }
+  #header .logo-block .fund-name {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--orange);
+    text-transform: uppercase;
+  }
+  #header .logo-block .fund-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+  }
+  #header .status-pills {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex: 1;
+  }
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    padding: 3px 9px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .pill-red    { background: var(--red-glow);   color: var(--red-light);   border: 1px solid var(--red);   }
+  .pill-orange { background: var(--orange-glow); color: var(--orange);      border: 1px solid var(--orange); }
+  .pill-green  { background: var(--green-glow);  color: var(--green-light); border: 1px solid var(--green); }
+  #header .date-block {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-align: right;
+    line-height: 1.5;
+  }
+
+  /* TICKER */
+  #ticker-bar {
+    position: fixed;
+    top: var(--header-h);
+    left: 0; right: 0;
+    height: var(--ticker-h);
+    background: #0A1929;
+    border-bottom: 1px solid var(--navy-border);
+    overflow: hidden;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+  }
+  #ticker-bar .ticker-label {
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--orange);
+    letter-spacing: 0.12em;
+    padding: 0 12px;
+    border-right: 1px solid var(--navy-border);
+    text-transform: uppercase;
+    white-space: nowrap;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    background: #0A1929;
+    z-index: 2;
+  }
+  #ticker-track-wrap {
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+    position: relative;
+  }
+  #ticker-track {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    white-space: nowrap;
+    will-change: transform;
+    animation: ticker-scroll 55s linear infinite;
+  }
+  #ticker-track:hover { animation-play-state: paused; }
+  @keyframes ticker-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    border-right: 1px solid var(--navy-border);
+    height: 100%;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  .ticker-item:hover { background: var(--navy-light); }
+  .ticker-item .t-sym  { font-weight: 700; color: var(--text-primary); letter-spacing: 0.04em; }
+  .ticker-item .t-price { color: var(--orange); font-weight: 600; }
+  .ticker-item .t-chg.up   { color: var(--green-light); }
+  .ticker-item .t-chg.down { color: var(--red-light); }
+  .ticker-item .t-pos { font-size: 9px; padding: 1px 5px; border-radius: 2px; font-weight: 700; }
+  .t-pos.long  { background: var(--green-glow); color: var(--green-light); }
+  .t-pos.short { background: var(--red-glow);   color: var(--red-light); }
+
+  /* NAVIGATION */
+  #sidenav {
+    position: fixed;
+    top: calc(var(--header-h) + var(--ticker-h));
+    left: 0;
+    width: var(--nav-width);
+    bottom: 0;
+    background: var(--navy-mid);
+    border-right: 1px solid var(--navy-border);
+    overflow-y: auto;
+    z-index: 900;
+    transition: transform var(--transition);
+  }
+  #sidenav.collapsed { transform: translateX(calc(-1 * var(--nav-width) + 40px)); }
+  .nav-toggle {
+    position: absolute;
+    right: -14px;
+    top: 16px;
+    width: 28px; height: 28px;
+    background: var(--navy-mid);
+    border: 1px solid var(--navy-border);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--orange);
+    font-size: 12px;
+    z-index: 10;
+    transition: transform var(--transition);
+  }
+  #sidenav.collapsed .nav-toggle { transform: rotate(180deg); }
+  .nav-section { border-bottom: 1px solid var(--navy-border); }
+  .nav-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    transition: all var(--transition);
+    user-select: none;
+  }
+  .nav-section-header:hover { background: var(--navy-light); color: var(--orange); }
+  .nav-section-header .nav-icon { font-size: 14px; }
+  .nav-section-header .nav-chevron {
+    margin-left: auto;
+    font-size: 10px;
+    transition: transform var(--transition);
+  }
+  .nav-section.open .nav-chevron { transform: rotate(90deg); }
+  .nav-items { display: none; }
+  .nav-section.open .nav-items { display: block; }
+  .nav-item {
+    display: block;
+    padding: 8px 14px 8px 34px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+    border-left: 2px solid transparent;
+    text-decoration: none;
+    user-select: none;
+  }
+  .nav-item:hover, .nav-item.active {
+    background: var(--navy-light);
+    color: var(--orange);
+    border-left-color: var(--orange);
+  }
+  .nav-item .nav-ticker {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 1px;
+  }
+
+  /* MAIN CONTENT */
+  #main {
+    margin-left: var(--nav-width);
+    margin-top: calc(var(--header-h) + var(--ticker-h));
+    padding: 24px;
+    transition: margin-left var(--transition);
+    min-height: calc(100vh - var(--header-h) - var(--ticker-h));
+  }
+  #sidenav.collapsed ~ #main { margin-left: 40px; }
+
+  /* SECTIONS */
+  .section-block { margin-bottom: 32px; scroll-margin-top: 120px; }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+    border-left: 3px solid var(--orange);
+    padding-left: 10px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* MACRO CARDS */
+  .macro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .macro-card {
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 4px;
+    padding: 14px;
+    text-align: center;
+  }
+  .mc-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .mc-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--orange);
+    margin-bottom: 4px;
+  }
+  .mc-sub {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .mc-change {
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .mc-change.down { color: var(--red-light); }
+
+  /* SLIDERS */
+  .sliders-panel {
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 4px;
+    padding: 20px;
+  }
+  .sp-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+  }
+  .slider-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 120px;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--navy-border);
+  }
+  .slider-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .slider-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .slider-label strong { color: var(--text-primary); }
+  .slider-row input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--navy-border);
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--orange);
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(214, 158, 46, 0.4);
+  }
+  .slider-row input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--orange);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 8px rgba(214, 158, 46, 0.4);
+  }
+  .slider-range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .slider-val {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--orange);
+  }
+  .stress-indicator {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .stress-indicator.stress-mid { background: var(--orange-glow); color: var(--orange); }
+  .stress-indicator.stress-high { background: var(--red-glow); color: var(--red-light); }
+  .stress-indicator.stress-easing { background: var(--green-glow); color: var(--green-light); }
+
+  /* TABLE */
+  .table-wrap {
+    overflow-x: auto;
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+  thead {
+    background: var(--navy-mid);
+    border-bottom: 2px solid var(--navy-border);
+  }
+  th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-right: 1px solid var(--navy-border);
+  }
+  th.num { text-align: right; }
+  th:last-child { border-right: none; }
+  tbody tr {
+    border-bottom: 1px solid var(--navy-border);
+    transition: background var(--transition);
+  }
+  tbody tr:hover { background: var(--navy-light); cursor: pointer; }
+  td {
+    padding: 12px;
+    color: var(--text-secondary);
+    border-right: 1px solid var(--navy-border);
+  }
+  td.num { text-align: right; font-family: var(--mono); }
+  td:last-child { border-right: none; }
+  .td-ticker { font-family: var(--mono); font-weight: 700; color: var(--text-primary); }
+  .td-pos-long { background: var(--green-glow); color: var(--green-light); padding: 2px 6px; border-radius: 2px; font-weight: 700; font-size: 9px; }
+  .td-pos-short { background: var(--red-glow); color: var(--red-light); padding: 2px 6px; border-radius: 2px; font-weight: 700; font-size: 9px; }
+  .td-weight-ow { background: var(--orange-glow); color: var(--orange); padding: 2px 6px; border-radius: 2px; font-weight: 700; font-size: 9px; }
+  .td-weight-uw { background: rgba(100,100,100,0.2); color: var(--text-secondary); padding: 2px 6px; border-radius: 2px; font-weight: 700; font-size: 9px; }
+  .td-up { color: var(--green-light); font-weight: 600; }
+  .td-down { color: var(--red-light); font-weight: 600; }
+
+  /* PILLAR CARDS */
+  .pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .pillar-card {
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 4px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .pillar-card:hover { border-color: var(--orange); transform: translateY(-2px); }
+  .pc-ticker {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .pc-company {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .pc-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .pc-metric {
+    background: var(--navy);
+    border: 1px solid var(--navy-border);
+    border-radius: 3px;
+    padding: 8px;
+    text-align: center;
+  }
+  .pcm-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .pcm-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--orange);
+  }
+  .pc-thesis {
+    font-size: 10px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    border-top: 1px solid var(--navy-border);
+    padding-top: 8px;
+  }
+
+  /* HEATMAP */
+  .heatmap-container {
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+  .heatmap-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 120px repeat(3, 1fr);
+    gap: 1px;
+    background: var(--navy-border);
+    padding: 1px;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .heatmap-cell {
+    background: var(--navy);
+    padding: 12px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+  }
+  .heatmap-cell.header {
+    background: var(--navy-mid);
+    font-weight: 700;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .heatmap-cell.row-label {
+    background: var(--navy-mid);
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: left;
+    justify-content: flex-start;
+  }
+  .heatmap-cell.data {
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .heatmap-cell.heat-cold { background: #0D3B66; color: #4A9EFF; }
+  .heatmap-cell.heat-cool { background: #1A5A8F; color: #6BB6FF; }
+  .heatmap-cell.heat-warm { background: #8B4513; color: #FFB347; }
+  .heatmap-cell.heat-hot { background: #C53030; color: #FF6B6B; }
+
+  /* NEURAL NETWORK */
+  .network-container {
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .network-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+  #network-canvas {
+    width: 100%;
+    height: 500px;
+    background: linear-gradient(135deg, #0D1F35 0%, #162944 100%);
+    border-radius: 3px;
+    border: 1px solid var(--navy-border);
+    display: block;
+    cursor: crosshair;
+  }
+  .network-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+    font-size: 10px;
+  }
+  .network-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: var(--navy);
+    border-radius: 3px;
+    border: 1px solid var(--navy-border);
+  }
+  .network-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .network-tooltip {
+    position: fixed;
+    background: var(--navy-card);
+    border: 1px solid var(--orange);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-primary);
+    pointer-events: none;
+    z-index: 2000;
+    display: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+
+  /* PORTFOLIO REALLOCATION */
+  .realloc-container {
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .realloc-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+  .realloc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .realloc-card {
+    background: var(--navy);
+    border: 1px solid var(--navy-border);
+    border-radius: 3px;
+    padding: 14px;
+  }
+  .realloc-card-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .realloc-card-title .badge {
+    font-family: var(--mono);
+    font-size: 8px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: var(--orange-glow);
+    color: var(--orange);
+    border: 1px solid var(--orange);
+  }
+  .realloc-stock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--navy-border);
+    font-size: 10px;
+  }
+  .realloc-stock-row:last-child { border-bottom: none; }
+  .realloc-ticker {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .realloc-weights {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .realloc-weight-box {
+    text-align: center;
+  }
+  .realloc-weight-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .realloc-weight-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .realloc-weight-val.increased { color: var(--green-light); }
+  .realloc-weight-val.decreased { color: var(--red-light); }
+  .realloc-weight-val.neutral { color: var(--text-secondary); }
+  .realloc-arrow {
+    font-size: 12px;
+    color: var(--orange);
+  }
+  .realloc-summary {
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 3px;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .realloc-summary strong { color: var(--text-primary); }
+
+  /* FOOTER */
+  #footer {
+    background: #080F1A;
+    border-top: 1px solid var(--navy-border);
+    padding: 24px;
+    margin-left: var(--nav-width);
+    transition: margin-left var(--transition);
+  }
+  #sidenav.collapsed ~ #footer { margin-left: 40px; }
+  .footer-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 14px;
+  }
+  .footer-disclaimer {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    border-top: 1px solid var(--navy-border);
+    padding-top: 12px;
+  }
+
+  /* MODAL */
+  #modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  #modal-overlay.open { display: flex; }
+  #modal-box {
+    background: var(--navy-mid);
+    border: 1px solid var(--orange);
+    border-radius: 6px;
+    max-width: 820px;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    animation: modal-in 0.2s ease;
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--navy-border);
+    background: #0D1F35;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .modal-header .mh-ticker {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .modal-header .mh-company {
+    font-size: 13px;
+    color: var(--text-secondary);
+    flex: 1;
+  }
+  .modal-close {
+    background: none;
+    border: 1px solid var(--navy-border);
+    color: var(--text-secondary);
+    width: 28px; height: 28px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all var(--transition);
+  }
+  .modal-close:hover { border-color: var(--red); color: var(--red-light); }
+  .modal-body { padding: 20px; }
+  .modal-section { margin-bottom: 20px; }
+  .modal-section-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+    border-bottom: 1px solid var(--navy-border);
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+  }
+  .modal-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .modal-metric-card {
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 3px;
+    padding: 12px;
+  }
+  .mmc-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .mmc-value {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .mmc-sub {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+  }
+  .dep-list { list-style: none; }
+  .dep-list li {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--navy-border);
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.5;
+  }
+  .dep-list li:last-child { border-bottom: none; }
+  .dep-list li .dep-icon { flex-shrink: 0; margin-top: 1px; }
+  .dep-list li strong { color: var(--text-primary); }
+  .exposure-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+  .exposure-bar-label { min-width: 140px; color: var(--text-secondary); }
+  .exposure-bar-wrap { flex: 1; height: 6px; background: var(--navy-border); border-radius: 3px; overflow: hidden; }
+  .exposure-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+  .exposure-bar-val { font-family: var(--mono); font-size: 11px; font-weight: 600; min-width: 40px; text-align: right; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    :root { --nav-width: 220px; }
+    .realloc-grid { grid-template-columns: 1fr; }
+    .heatmap-grid { grid-template-columns: 100px repeat(3, 1fr); }
+    .slider-row { grid-template-columns: 150px 1fr 100px; }
+  }
+  @media (max-width: 680px) {
+    #sidenav { transform: translateX(-100%); }
+    #sidenav.mobile-open { transform: translateX(0); }
+    #main, #footer { margin-left: 0; }
+    .heatmap-grid { grid-template-columns: 80px repeat(3, 1fr); font-size: 9px; }
+    .slider-row { grid-template-columns: 1fr; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="header">
+  <div class="logo-block">
+    <span class="fund-name">European L/S Equity Alpha Fund</span>
+    <span class="fund-sub">Portfolio Management Directive &amp; Real-Time Stress Testing</span>
+  </div>
+  <div class="status-pills">
+    <span class="status-pill pill-red">⚠ HORMUZ BLOCKADE ACTIVE</span>
+    <span class="status-pill pill-orange">MOU SIGNED 17-JUN-2026</span>
+    <span class="status-pill pill-orange">BRENT $98/bbl</span>
+    <span class="status-pill pill-red">EU GAS STORAGE 46 BCM</span>
+    <span class="status-pill pill-green">STRESS MODEL LIVE</span>
+  </div>
+  <div class="date-block">
+    <div style="color:var(--orange);font-weight:700;">26 JUN 2026</div>
+    <div>CONFIDENTIAL — PRIME BROKERAGE RISK DESK</div>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div id="ticker-bar">
+  <div class="ticker-label">⚡ LIVE UNIVERSE</div>
+  <div id="ticker-track-wrap">
+    <div id="ticker-track"><!-- populated by JS --></div>
+  </div>
+</div>
+
+<!-- NAVIGATION -->
+<nav id="sidenav">
+  <div class="nav-toggle" onclick="toggleNav()" title="Collapse/Expand">&#8249;</div>
+
+  <div class="nav-section open">
+    <div class="nav-section-header" onclick="toggleSection(event)">
+      <span class="nav-icon">📊</span>
+      <span>Executive Summary &amp; Macro</span>
+      <span class="nav-chevron">›</span>
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" onclick="scrollToSection('sec-macro', event)">Macro Framework<span class="nav-ticker">Hormuz Reality 2026</span></a>
+      <a class="nav-item" onclick="scrollToSection('sec-sliders', event)">Stress Sliders<span class="nav-ticker">Interactive Volatility Vectors</span></a>
+      <a class="nav-item" onclick="scrollToSection('sec-heatmap', event)">Factor Exposure Heatmap<span class="nav-ticker">Stress Vector Correlation</span></a>
+      <a class="nav-item" onclick="scrollToSection('sec-network', event)">Crisis Contagion Network<span class="nav-ticker">Dependency Mapping</span></a>
+    </div>
+  </div>
+
+  <div class="nav-section open">
+    <div class="nav-section-header" onclick="toggleSection(event)">
+      <span class="nav-icon">🗂</span>
+      <span>Portfolio Mandate &amp; Book</span>
+      <span class="nav-chevron">›</span>
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" onclick="scrollToSection('sec-portfolio', event)">Master Portfolio Table<span class="nav-ticker">12-Stock Universe</span></a>
+    </div>
+  </div>
+
+  <div class="nav-section open">
+    <div class="nav-section-header" onclick="toggleSection(event)">
+      <span class="nav-icon">🛡</span>
+      <span>Three-Pillar Impact Matrix</span>
+      <span class="nav-chevron">›</span>
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" onclick="scrollToSection('sec-chemicals', event)">🧪 Chemicals Cluster<span class="nav-ticker">YAR NO · BAS GY · SOLB BB</span></a>
+      <a class="nav-item" onclick="scrollToSection('sec-industrials', event)">⚙️ Industrials Cluster<span class="nav-ticker">DHL GY · VOLVB SS · ALTR FP</span></a>
+      <a class="nav-item" onclick="scrollToSection('sec-tech', event)">💼 Tech / Semis Cluster<span class="nav-ticker">ASM NA · BEIERS NA · SOON SW</span></a>
+      <a class="nav-item" onclick="scrollToSection('sec-healthcare', event)">🏥 Healthcare / Agri<span class="nav-ticker">GSK LN · SAN FP · BAYN GY</span></a>
+    </div>
+  </div>
+
+  <div class="nav-section open">
+    <div class="nav-section-header" onclick="toggleSection(event)">
+      <span class="nav-icon">🔄</span>
+      <span>Portfolio Reallocation</span>
+      <span class="nav-chevron">›</span>
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" onclick="scrollToSection('sec-realloc', event)">Dynamic Weighting Shift<span class="nav-ticker">Base vs. Stress Rebalancing</span></a>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+  <!-- MACRO FRAMEWORK -->
+  <section id="sec-macro" class="section-block">
+    <div class="section-title">📊 Macro Framework: The 2026 Hormuz Reality</div>
+    <div class="macro-grid">
+      <div class="macro-card">
+        <div class="mc-label">Brent Crude (Structural)</div>
+        <div class="mc-value">$98</div>
+        <div class="mc-sub">per barrel — structural high</div>
+        <div class="mc-change down">▼ from $126 peak (Mar 2026)</div>
+      </div>
+      <div class="macro-card">
+        <div class="mc-label">EU Gas Storage</div>
+        <div class="mc-value">46 bcm</div>
+        <div class="mc-sub">entering spring 2026</div>
+        <div class="mc-change down">▼ vs 60 bcm in spring 2025</div>
+      </div>
+      <div class="macro-card">
+        <div class="mc-label">LME Aluminium</div>
+        <div class="mc-value">$3,630</div>
+        <div class="mc-sub">per tonne — 4-year high</div>
+        <div class="mc-change down">▲ +32% LME supply deficit</div>
+      </div>
+      <div class="macro-card">
+        <div class="mc-label">Ammonia / Urea Spike</div>
+        <div class="mc-value">+45%</div>
+        <div class="mc-sub">fertilizer input cost rise</div>
+        <div class="mc-change down">▲ Bottleneck multiplier 1.45×</div>
+      </div>
+      <div class="macro-card">
+        <div class="mc-label">Blockade Onset</div>
+        <div class="mc-value" style="font-size:14px;">28 Feb 2026</div>
+        <div class="mc-sub">IRGC strict blockade declared</div>
+        <div class="mc-change" style="color:var(--orange);">MOU signed 17 Jun 2026</div>
+      </div>
+      <div class="macro-card">
+        <div class="mc-label">Baseline Normalisation</div>
+        <div class="mc-value" style="font-size:14px;">Q1 2027</div>
+        <div class="mc-sub">S&amp;P Global / IEA estimate</div>
+        <div class="mc-change down">Pre-conflict shipping capacity</div>
+      </div>
+    </div>
+    <div style="background:var(--navy-card);border:1px solid var(--navy-border);border-radius:4px;padding:14px 16px;font-size:11.5px;color:var(--text-secondary);line-height:1.7;">
+      Following the military escalation that began on <strong style="color:var(--text-primary);">February 28, 2026</strong>, and the subsequent declaration of a strict blockade by the IRGC, shipping transits through the Strait of Hormuz slowed to a virtual standstill. Despite the June 17, 2026 Memorandum of Understanding (MOU) signed between Washington and Tehran, S&amp;P Global and the IEA confirm that a return to pre-conflict commercial shipping baseline capacities will not occur until <strong style="color:var(--orange);">Q1 2027 at the earliest</strong>. This macro shock maps directly into systemic supply disruptions across three specific commodity vectors: <strong style="color:var(--text-primary);">Crude/Feedstock Oil</strong>, <strong style="color:var(--text-primary);">Aluminium</strong>, and <strong style="color:var(--text-primary);">Ammonia/Fertilizers</strong>.
+    </div>
+  </section>
+
+  <!-- STRESS SLIDERS -->
+  <section id="sec-sliders" class="section-block">
+    <div class="section-title">⚡ Interactive Stress Vectors — Real-Time Sensitivity Engine</div>
+    <div class="sliders-panel">
+      <div class="sp-title">⚙️ Macro Volatility Sliders — Drag to Stress-Test Portfolio Metrics</div>
+
+      <div class="slider-row">
+        <div class="slider-label">
+          <strong>🛢 Crude Oil / Feedstock Price</strong>
+          Baseline: $98/bbl · Range: $80–$150
+        </div>
+        <div>
+          <input type="range" id="sl-oil" min="80" max="150" value="98" step="1" oninput="updateStress()" />
+          <div class="slider-range-labels"><span>$80</span><span>$115</span><span>$150</span></div>
+        </div>
+        <div class="slider-val">$<span id="sv-oil">98</span>/bbl<br><span id="si-oil" class="stress-indicator stress-mid">BASELINE</span></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-label">
+          <strong>🏗 Aluminium LME Supply Deficit</strong>
+          Baseline: 32% · Range: 0%–60%
+        </div>
+        <div>
+          <input type="range" id="sl-al" min="0" max="60" value="32" step="1" oninput="updateStress()" />
+          <div class="slider-range-labels"><span>0%</span><span>30%</span><span>60%</span></div>
+        </div>
+        <div class="slider-val"><span id="sv-al">32</span>%<br><span id="si-al" class="stress-indicator stress-mid">BASELINE</span></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-label">
+          <strong>🌾 Fertilizer / Ammonia Bottleneck</strong>
+          Baseline: 1.45× · Range: 1.0×–2.5×
+        </div>
+        <div>
+          <input type="range" id="sl-fert" min="100" max="250" value="145" step="5" oninput="updateStress()" />
+          <div class="slider-range-labels"><span>1.0×</span><span>1.75×</span><span>2.5×</span></div>
+        </div>
+        <div class="slider-val"><span id="sv-fert">1.45</span>×<br><span id="si-fert" class="stress-indicator stress-mid">BASELINE</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MASTER PORTFOLIO TABLE -->
+  <section id="sec-portfolio" class="section-block">
+    <div class="section-title">🗂 Master Portfolio Table — 12-Stock Universe (€1bn–€200bn Market Cap)</div>
+    <div class="table-wrap">
+      <table id="master-table">
+        <thead>
+          <tr>
+            <th>Ticker</th>
+            <th>Company</th>
+            <th>Country</th>
+            <th class="num">Mkt Cap</th>
+            <th>Sector</th>
+            <th>Position</th>
+            <th>Weight</th>
+            <th class="num">Price</th>
+            <th class="num">EV/EBITDA</th>
+            <th class="num">FCF Yield</th>
+            <th class="num">FCF Δ (bps)</th>
+            <th>Disruption Vector</th>
+            <th>Thesis</th>
+          </tr>
+        </thead>
+        <tbody id="master-tbody">
+          <!-- populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- HEATMAP -->
+  <section id="sec-heatmap" class="section-block">
+    <div class="section-title">🔥 Factor Exposure Heatmap — 12-Stock × 3-Vector Sensitivity Matrix</div>
+    <div class="heatmap-container">
+      <div class="heatmap-title">Stress Impact Correlation: Colour-coded by Sensitivity Magnitude</div>
+      <div class="heatmap-grid" id="heatmap-grid"><!-- populated by JS --></div>
+    </div>
+  </section>
+
+  <!-- NEURAL NETWORK -->
+  <section id="sec-network" class="section-block">
+    <div class="section-title">🧠 Crisis Contagion Neural Network — Hormuz Blockade Dependency Graph</div>
+    <div class="network-container">
+      <div class="network-title">Interactive Dependency Mapping: Hover over nodes to explore 1st &amp; 2nd Order Contagion Vectors</div>
+      <canvas id="network-canvas"></canvas>
+      <div class="network-legend">
+        <div class="network-legend-item">
+          <div class="network-legend-dot" style="background:#D69E2E;"></div>
+          <span>Hormuz Blockade (Root Shock)</span>
+        </div>
+        <div class="network-legend-item">
+          <div class="network-legend-dot" style="background:#2F855A;"></div>
+          <span>1st Order Dependency (Direct Exposure)</span>
+        </div>
+        <div class="network-legend-item">
+          <div class="network-legend-dot" style="background:#4A9EFF;"></div>
+          <span>2nd Order Dependency (Contagion)</span>
+        </div>
+        <div class="network-legend-item">
+          <div class="network-legend-dot" style="background:#C53030;"></div>
+          <span>High Risk Concentration</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHEMICALS CLUSTER -->
+  <section id="sec-chemicals" class="section-block">
+    <div class="section-title">🧪 Pillar I — Chemicals Cluster: The Asymmetrical Battleground</div>
+    <div class="pillars-grid" id="pillar-chemicals">
+      <!-- populated by JS -->
+    </div>
+  </section>
+
+  <!-- INDUSTRIALS CLUSTER -->
+  <section id="sec-industrials" class="section-block">
+    <div class="section-title">⚙️ Pillar II — Industrials Cluster: Freight Arbitrage vs. Production Pauses</div>
+    <div class="pillars-grid" id="pillar-industrials">
+      <!-- populated by JS -->
+    </div>
+  </section>
+
+  <!-- TECH/SEMIS CLUSTER -->
+  <section id="sec-tech" class="section-block">
+    <div class="section-title">💼 Pillar III — Technology &amp; Semiconductors: Secondary-Order Insulation</div>
+    <div class="pillars-grid" id="pillar-tech">
+      <!-- populated by JS -->
+    </div>
+  </section>
+
+  <!-- HEALTHCARE/AGRI CLUSTER -->
+  <section id="sec-healthcare" class="section-block">
+    <div class="section-title">🏥 Pillar IV — Healthcare &amp; Agri: Defensiveness Confronts Agribusiness Volatility</div>
+    <div class="pillars-grid" id="pillar-healthcare">
+      <!-- populated by JS -->
+    </div>
+  </section>
+
+  <!-- PORTFOLIO REALLOCATION -->
+  <section id="sec-realloc" class="section-block">
+    <div class="section-title">🔄 Dynamic Portfolio Reallocation — Base vs. Stress Scenario Weighting</div>
+    <div class="realloc-container">
+      <div class="realloc-title">Recommended Position Adjustments to Maintain Factor Neutrality Under Stress</div>
+      <div class="realloc-grid" id="realloc-grid"><!-- populated by JS --></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- NETWORK TOOLTIP -->
+<div class="network-tooltip" id="network-tooltip"></div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal-box">
+    <div class="modal-header">
+      <span class="mh-ticker" id="modal-ticker">—</span>
+      <span class="mh-company" id="modal-company">—</span>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"><!-- populated by JS --></div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   STOCK DATA UNIVERSE
+════════════════════════════════════════════════════════════════ */
+const STOCKS = [
+  {
+    ticker: 'YAR NO', company: 'Yara International', country: '🇳🇴 Norway',
+    mktCap: '€9.2bn', sector: 'Chemicals', position: 'LONG', weight: 'OW',
+    price: 'NOK 432.7', priceNum: 432.7, currency: 'NOK',
+    evEbitdaBase: 5.2, fcfYieldBase: 12.4, fcfDeltaBps: +380,
+    disruption: 'Fertilizer Bottleneck',
+    thesis: 'Absolute beneficiary of global nitrogen pricing asymmetry.',
+    icon: '🧪',
+    oilSensitivity: 15, alSensitivity: 5, fertSensitivity: 95,
+    modalData: {
+      position: 'LONG — OVERWEIGHT',
+      posClass: 'long',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '5.2×', cls: 'val-up' },
+        { label: 'FCF Yield (Stress)', value: '12.4%', cls: 'val-up' },
+        { label: 'FCF Δ vs Baseline', value: '+380 bps', cls: 'val-up' },
+        { label: 'Gas Input Cost Rise', value: '+45%', cls: 'val-down' },
+      ],
+      firstOrder: [
+        { icon: '🌾', text: '<strong>Nitrogen Pricing Asymmetry:</strong> Yara utilises domestic European and North American low-cost nitrogen assets, structurally bypassing the Hormuz choke point. International fertilizer selling prices have jumped over 45% on surging spot prices.' },
+        { icon: '⛽', text: '<strong>Gas Input Exposure:</strong> While European natural gas inputs are volatile, Yara\'s diversified production base (Norway, Trinidad, US) means it is not fully dependent on European spot gas pricing.' },
+        { icon: '💰', text: '<strong>EV/EBITDA Re-rating:</strong> EV/EBITDA contracts from historical 7.2× to an implied 4.8× on surging spot prices, with FCF Yield modelled to expand to 12.4%, driving strong upward pressure on share price.' },
+      ],
+      secondOrder: [
+        { icon: '🚢', text: '<strong>Maritime Insulation:</strong> Yara\'s primary shipping routes for finished fertilizer products largely avoid the Persian Gulf corridor, utilising Atlantic and North Sea routes.' },
+        { icon: '🌍', text: '<strong>Agricultural Demand Surge:</strong> Global food security concerns driven by the Hormuz blockade have elevated demand for nitrogen-based fertilizers, benefiting Yara\'s pricing power.' },
+        { icon: '⚡', text: '<strong>Energy Cost Hedge:</strong> Norwegian hydropower provides a natural hedge against European gas price spikes for Yara\'s Scandinavian production facilities.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Exposure', pct: 8, color: 'var(--green-light)' },
+        { label: 'EU Gas Dependency', pct: 35, color: 'var(--orange)' },
+        { label: 'Atlantic Route Exposure', pct: 72, color: 'var(--green-light)' },
+        { label: 'Fertilizer Price Upside', pct: 88, color: 'var(--green-light)' },
+      ],
+      fleetNote: 'Yara\'s bulk carrier fleet primarily operates Atlantic and Pacific routes. Persian Gulf transit represents <10% of total shipping volume. No material fleet disruption identified in Hormuz Blockade and Fleet Tracking Analysis (2026).',
+    }
+  },
+  {
+    ticker: 'BAS GY', company: 'BASF SE', country: '🇩🇪 Germany',
+    mktCap: '€42.0bn', sector: 'Chemicals', position: 'SHORT', weight: 'UW',
+    price: '€47.80', priceNum: 47.80, currency: 'EUR',
+    evEbitdaBase: 8.5, fcfYieldBase: 3.2, fcfDeltaBps: -290,
+    disruption: 'Oil / Gas Feedstock',
+    thesis: 'High European gas inputs & structural margins collapse.',
+    icon: '🧪',
+    oilSensitivity: 85, alSensitivity: 20, fertSensitivity: 30,
+    modalData: {
+      position: 'SHORT — UNDERWEIGHT',
+      posClass: 'short',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '8.5×', cls: 'val-down' },
+        { label: 'FCF Yield (Stress)', value: '3.2%', cls: 'val-down' },
+        { label: 'FCF Δ vs Baseline', value: '-290 bps', cls: 'val-down' },
+        { label: 'EPS Cut FY26', value: '-22%', cls: 'val-down' },
+      ],
+      firstOrder: [
+        { icon: '⛽', text: '<strong>Feedstock Dependency:</strong> BASF\'s Ludwigshafen Verbund complex is the world\'s largest integrated chemical complex, highly dependent on stable, low-cost raw steam cracker feedstocks (naphtha) and gas inputs.' },
+        { icon: '📉', text: '<strong>COGS Compression:</strong> Financial stress testing indicates COGS spikes significantly as global energy costs surge. With European gas inventory buffers thin, input costs cannot be passed to downstream automotive or consumer segments.' },
+        { icon: '💸', text: '<strong>EPS Deterioration:</strong> EPS forecasts are cut by 22% for FY26. EV/EBITDA looks deceptively cheap at 8.5× but signals a classic value trap as earnings quality deteriorates.' },
+      ],
+      secondOrder: [
+        { icon: '🚢', text: '<strong>Naphtha Shipping Routes:</strong> A significant portion of BASF\'s naphtha feedstock is sourced from Middle Eastern and North African suppliers, with shipping routes transiting or adjacent to the Hormuz corridor.' },
+        { icon: '🏭', text: '<strong>Ludwigshafen Facility Risk:</strong> The Ludwigshafen complex consumes approximately 3.7 TWh of natural gas annually. European gas spot price volatility directly impacts operational margins.' },
+        { icon: '🚗', text: '<strong>Automotive Downstream Exposure:</strong> BASF\'s Performance Materials division supplies directly to European automotive OEMs (VW, BMW, Stellantis), which are themselves under margin pressure from aluminium cost inflation.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Route Exposure', pct: 42, color: 'var(--red-light)' },
+        { label: 'EU Gas Dependency', pct: 85, color: 'var(--red-light)' },
+        { label: 'Automotive Downstream', pct: 38, color: 'var(--orange)' },
+        { label: 'Margin Compression Risk', pct: 78, color: 'var(--red-light)' },
+      ],
+      fleetNote: 'BASF sources naphtha via tanker routes through the Mediterranean and Atlantic. Hormuz disruption has elevated naphtha spot premiums by 18–24%, directly impacting Ludwigshafen cracker economics.',
+    }
+  },
+  {
+    ticker: 'SOLB BB', company: 'Solvay SA', country: '🇧🇪 Belgium',
+    mktCap: '€3.4bn', sector: 'Chemicals', position: 'SHORT', weight: 'UW',
+    price: '€27.40', priceNum: 27.40, currency: 'EUR',
+    evEbitdaBase: 7.1, fcfYieldBase: 2.8, fcfDeltaBps: -180,
+    disruption: 'Oil / Gas Feedstock',
+    thesis: 'Energy-intensive essential chemistries highly vulnerable to COGS.',
+    icon: '🧪',
+    oilSensitivity: 80, alSensitivity: 15, fertSensitivity: 25,
+    modalData: {
+      position: 'SHORT — UNDERWEIGHT',
+      posClass: 'short',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '7.1×', cls: 'val-down' },
+        { label: 'FCF Yield (Stress)', value: '2.8%', cls: 'val-down' },
+        { label: 'FCF Δ vs Baseline', value: '-180 bps', cls: 'val-down' },
+        { label: 'Market Cap', value: '€3.4bn', cls: 'val-neutral' },
+      ],
+      firstOrder: [
+        { icon: '⚡', text: '<strong>Energy-Intensive Production:</strong> Solvay\'s core chemistries — soda ash, peroxides, and specialty polymers — are among the most energy-intensive in the European chemicals sector, with electricity and gas representing 25–30% of total COGS.' },
+        { icon: '📉', text: '<strong>COGS Vulnerability:</strong> European gas price spikes directly translate to margin compression across Solvay\'s essential chemistries portfolio. Unlike specialty chemicals peers, Solvay has limited pricing power to pass through energy cost increases.' },
+        { icon: '🏭', text: '<strong>Belgian Industrial Exposure:</strong> Solvay\'s primary production facilities in Belgium and France are dependent on European grid electricity and pipeline gas, both of which face structural price elevation through Q1 2027.' },
+      ],
+      secondOrder: [
+        { icon: '🚢', text: '<strong>Sulfur Supply Chain:</strong> Solvay sources sulfur — a key raw material for its peroxide and specialty chemical divisions — partially from Middle Eastern refineries, with supply chains disrupted by the Hormuz blockade.' },
+        { icon: '🔬', text: '<strong>Downstream Specialty Exposure:</strong> Solvay\'s specialty polymers serve aerospace and automotive sectors, both of which face demand headwinds from the broader industrial slowdown.' },
+        { icon: '💧', text: '<strong>Soda Ash Pricing:</strong> While soda ash demand from glass and detergent sectors remains stable, energy cost inflation erodes the margin buffer that historically supported Solvay\'s defensive positioning.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Route Exposure', pct: 28, color: 'var(--orange)' },
+        { label: 'EU Gas Dependency', pct: 78, color: 'var(--red-light)' },
+        { label: 'Sulfur Supply Risk', pct: 45, color: 'var(--orange)' },
+        { label: 'Margin Compression Risk', pct: 65, color: 'var(--red-light)' },
+      ],
+      fleetNote: 'Solvay\'s sulfur and raw material imports from Gulf region suppliers have been disrupted. Alternative sourcing from North American and Canadian suppliers adds 12–18% to raw material logistics costs.',
+    }
+  },
+  {
+    ticker: 'DHL GY', company: 'DHL Group', country: '🇩🇪 Germany',
+    mktCap: '€44.5bn', sector: 'Industrials', position: 'LONG', weight: 'OW',
+    price: '€53.20', priceNum: 53.20, currency: 'EUR',
+    evEbitdaBase: 6.1, fcfYieldBase: 8.9, fcfDeltaBps: +180,
+    disruption: 'Logistical Shifting',
+    thesis: 'Air/Ocean freight rate hardening drives massive margin upside.',
+    icon: '🚢',
+    oilSensitivity: 65, alSensitivity: 45, fertSensitivity: 20,
+    modalData: {
+      position: 'LONG — OVERWEIGHT',
+      posClass: 'long',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '6.1×', cls: 'val-up' },
+        { label: 'FCF Yield (Stress)', value: '8.9%', cls: 'val-up' },
+        { label: 'FCF Δ vs Baseline', value: '+180 bps', cls: 'val-up' },
+        { label: 'Revenue Growth YoY', value: '+14%', cls: 'val-up' },
+      ],
+      firstOrder: [
+        { icon: '✈️', text: '<strong>Air Freight Rate Hardening:</strong> The complete avoidance of Persian Gulf and Red Sea corridors shifted massive freight volumes to alternative ocean lanes and time-sensitive air freight. DHL\'s global forwarding network captures this directly.' },
+        { icon: '🚢', text: '<strong>Ocean Freight Rerouting:</strong> Vessels rerouting around the Cape of Good Hope add 10–14 days to transit times, dramatically increasing demand for DHL\'s premium express and logistics services.' },
+        { icon: '💰', text: '<strong>Yield per Container:</strong> Revenue per container/ton spikes outpace the rising cost of aviation fuel. Revenue is modelled to rise +14% YoY through Q1 2027.' },
+      ],
+      secondOrder: [
+        { icon: '🌍', text: '<strong>Global Forwarding Dominance:</strong> DHL\'s unmatched global network allows it to capture displaced volumes from traditional Hormuz-dependent shipping lanes.' },
+        { icon: '📦', text: '<strong>E-commerce Tailwind:</strong> Increased demand for time-sensitive logistics from e-commerce and pharmaceutical sectors benefits DHL\'s margin profile.' },
+        { icon: '⚡', text: '<strong>Fuel Surcharge Pass-Through:</strong> DHL\'s fuel surcharge mechanisms allow rapid pass-through of aviation fuel cost increases to customers.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Exposure', pct: 12, color: 'var(--orange)' },
+        { label: 'Air Freight Upside', pct: 82, color: 'var(--green-light)' },
+        { label: 'Ocean Rerouting Benefit', pct: 75, color: 'var(--green-light)' },
+        { label: 'Margin Expansion', pct: 68, color: 'var(--green-light)' },
+      ],
+      fleetNote: 'DHL\'s aircraft and vessel fleet is globally distributed and not dependent on Hormuz transit. The blockade has actually increased demand for DHL\'s services as alternative routing becomes necessary.',
+    }
+  },
+  {
+    ticker: 'VOLVB SS', company: 'Volvo Group', country: '🇸🇪 Sweden',
+    mktCap: '€28.3bn', sector: 'Industrials', position: 'SHORT', weight: 'UW',
+    price: 'SEK 324.6', priceNum: 324.6, currency: 'SEK',
+    evEbitdaBase: 7.8, fcfYieldBase: 5.1, fcfDeltaBps: -420,
+    disruption: 'Aluminium Cost Shock',
+    thesis: 'Heavy aluminium exposure; COGS spike crushes truck/construction demand.',
+    icon: '⚙️',
+    oilSensitivity: 40, alSensitivity: 75, fertSensitivity: 10,
+    modalData: {
+      position: 'SHORT — UNDERWEIGHT',
+      posClass: 'short',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '7.8×', cls: 'val-down' },
+        { label: 'FCF Yield (Stress)', value: '5.1%', cls: 'val-down' },
+        { label: 'FCF Δ vs Baseline', value: '-420 bps', cls: 'val-down' },
+        { label: 'Al COGS Exposure', value: '+$1.2bn', cls: 'val-down' },
+      ],
+      firstOrder: [
+        { icon: '🏗', text: '<strong>Aluminium-Intensive Manufacturing:</strong> Volvo\'s heavy-duty truck and construction equipment divisions use aluminium extensively for weight reduction and fuel efficiency. LME aluminium at $3,630/tonne represents a 32% supply deficit.' },
+        { icon: '📉', text: '<strong>COGS Compression:</strong> Volvo cannot pass through aluminium cost increases to customers in a demand-constrained environment. Estimated COGS impact: +$1.2bn annually at current LME levels.' },
+        { icon: '💸', text: '<strong>Demand Destruction:</strong> Higher truck and equipment prices due to aluminium cost spikes will suppress construction and logistics demand in Europe, directly impacting Volvo\'s order book.' },
+      ],
+      secondOrder: [
+        { icon: '🚚', text: '<strong>Logistics Sector Slowdown:</strong> European logistics companies facing margin pressure will delay truck purchases, creating a demand cliff for Volvo.' },
+        { icon: '🏢', text: '<strong>Construction Sector Headwinds:</strong> Higher equipment costs will slow European construction activity, reducing Volvo\'s equipment sales.' },
+        { icon: '⚡', text: '<strong>Supply Chain Disruption:</strong> Volvo\'s supply chain for aluminium components is partially dependent on Gulf region suppliers, creating additional logistics costs.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Route Exposure', pct: 35, color: 'var(--orange)' },
+        { label: 'Al Cost Exposure', pct: 88, color: 'var(--red-light)' },
+        { label: 'Demand Destruction Risk', pct: 72, color: 'var(--red-light)' },
+        { label: 'Margin Compression', pct: 82, color: 'var(--red-light)' },
+      ],
+      fleetNote: 'Volvo\'s manufacturing facilities in Sweden and Europe are not directly exposed to Hormuz transit, but the company\'s aluminium supply chains and customer base are heavily impacted by the blockade.',
+    }
+  },
+  {
+    ticker: 'ALTR FP', company: 'Alstom SA', country: '🇫🇷 France',
+    mktCap: '€18.2bn', sector: 'Industrials', position: 'SHORT', weight: 'UW',
+    price: '€14.20', priceNum: 14.20, currency: 'EUR',
+    evEbitdaBase: 8.2, fcfYieldBase: 1.8, fcfDeltaBps: -95,
+    disruption: 'Supply Chain Delays',
+    thesis: 'Rail/transport infrastructure projects face aluminium supply constraints.',
+    icon: '⚙️',
+    oilSensitivity: 35, alSensitivity: 55, fertSensitivity: 5,
+    modalData: {
+      position: 'SHORT — UNDERWEIGHT',
+      posClass: 'short',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '8.2×', cls: 'val-down' },
+        { label: 'FCF Yield (Stress)', value: '1.8%', cls: 'val-down' },
+        { label: 'FCF Δ vs Baseline', value: '-95 bps', cls: 'val-down' },
+        { label: 'Project Delays', value: '+8-12 months', cls: 'val-down' },
+      ],
+      firstOrder: [
+        { icon: '🚆', text: '<strong>Rail Infrastructure Exposure:</strong> Alstom\'s rail transport division relies heavily on aluminium for lightweight train bodies and components. Supply constraints will delay project completions.' },
+        { icon: '📦', text: '<strong>Supply Chain Bottleneck:</strong> Aluminium sourcing from Gulf region suppliers has been disrupted, causing 8–12 month delays in project timelines.' },
+        { icon: '💰', text: '<strong>Fixed-Price Contract Risk:</strong> Many of Alstom\'s infrastructure contracts are fixed-price, meaning aluminium cost inflation directly compresses margins.' },
+      ],
+      secondOrder: [
+        { icon: '🏗', text: '<strong>European Infrastructure Slowdown:</strong> Delayed rail projects reduce overall European infrastructure spending, impacting Alstom\'s order pipeline.' },
+        { icon: '🌍', text: '<strong>Global Supply Chain Disruption:</strong> Alstom\'s global supply chain for aluminium components faces extended lead times and premium pricing.' },
+        { icon: '⚡', text: '<strong>Competitive Pressure:</strong> Competitors with better-hedged aluminium positions may win market share from Alstom.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Route Exposure', pct: 42, color: 'var(--orange)' },
+        { label: 'Al Supply Constraint', pct: 65, color: 'var(--red-light)' },
+        { label: 'Project Delay Risk', pct: 58, color: 'var(--orange)' },
+        { label: 'Margin Compression', pct: 48, color: 'var(--orange)' },
+      ],
+      fleetNote: 'Alstom\'s manufacturing facilities in France and Europe are not directly exposed to Hormuz transit, but the company\'s aluminium supply chains and project timelines are significantly impacted.',
+    }
+  },
+  {
+    ticker: 'ASM NA', company: 'ASM International', country: '🇳🇱 Netherlands',
+    mktCap: '€62.8bn', sector: 'Tech/Semis', position: 'LONG', weight: 'OW',
+    price: '€948.00', priceNum: 948.00, currency: 'EUR',
+    evEbitdaBase: 28.4, fcfYieldBase: 3.8, fcfDeltaBps: +22,
+    disruption: 'None — Structural Insulation',
+    thesis: 'Semiconductor equipment demand insulated from Hormuz; structural growth.',
+    icon: '💼',
+    oilSensitivity: 5, alSensitivity: 10, fertSensitivity: 2,
+    modalData: {
+      position: 'LONG — OVERWEIGHT',
+      posClass: 'long',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '28.4×', cls: 'val-up' },
+        { label: 'FCF Yield (Stress)', value: '3.8%', cls: 'val-up' },
+        { label: 'FCF Δ vs Baseline', value: '+22 bps', cls: 'val-up' },
+        { label: 'Energy Cost %', value: '3.5% of OpEx', cls: 'val-up' },
+      ],
+      firstOrder: [
+        { icon: '🖥️', text: '<strong>Semiconductor Equipment Demand:</strong> ASM\'s atomic layer deposition (ALD) and etch equipment are essential for advanced semiconductor manufacturing. Demand is driven by AI chip proliferation, not commodity prices.' },
+        { icon: '🌍', text: '<strong>Supply Chain Insulation:</strong> ASM\'s supply chain is primarily intra-Europe, US, and East Asia. No material Persian Gulf transit dependency.' },
+        { icon: '⚡', text: '<strong>Energy Cost Resilience:</strong> Energy represents only 3.5% of ASM\'s total operational expenditure, making the company highly resilient to energy price spikes.' },
+      ],
+      secondOrder: [
+        { icon: '🤖', text: '<strong>AI Chip Tailwind:</strong> Continued demand for AI accelerators and GPUs benefits ASM\'s equipment sales.' },
+        { icon: '📈', text: '<strong>Margin Expansion:</strong> ASM\'s high-margin equipment business benefits from semiconductor industry consolidation and capacity expansion.' },
+        { icon: '🔬', text: '<strong>Technology Leadership:</strong> ASM\'s proprietary ALD technology provides structural competitive advantages.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Exposure', pct: 2, color: 'var(--green-light)' },
+        { label: 'Energy Cost Exposure', pct: 3.5, color: 'var(--green-light)' },
+        { label: 'AI Demand Upside', pct: 92, color: 'var(--green-light)' },
+        { label: 'Margin Expansion', pct: 78, color: 'var(--green-light)' },
+      ],
+      fleetNote: 'ASM\'s manufacturing and supply chain are primarily located in the Netherlands, US, and East Asia. The company is structurally insulated from Hormuz blockade disruptions.',
+    }
+  },
+  {
+    ticker: 'BEIERS NA', company: 'Beiersdorf AG', country: '🇩🇪 Germany',
+    mktCap: '€12.4bn', sector: 'Tech/Semis', position: 'LONG', weight: 'OW',
+    price: '€118.40', priceNum: 118.40, currency: 'EUR',
+    evEbitdaBase: 10.1, fcfYieldBase: 5.2, fcfDeltaBps: +18,
+    disruption: 'None — Defensive Consumer',
+    thesis: 'Consumer staples with pricing power; minimal commodity exposure.',
+    icon: '💼',
+    oilSensitivity: 8, alSensitivity: 12, fertSensitivity: 3,
+    modalData: {
+      position: 'LONG — OVERWEIGHT',
+      posClass: 'long',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '10.1×', cls: 'val-up' },
+        { label: 'FCF Yield (Stress)', value: '5.2%', cls: 'val-up' },
+        { label: 'FCF Δ vs Baseline', value: '+18 bps', cls: 'val-up' },
+        { label: 'Pricing Power', value: 'Strong', cls: 'val-up' },
+      ],
+      firstOrder: [
+        { icon: '🏥', text: '<strong>Consumer Staples Defensive:</strong> Beiersdorf\'s adhesive and skincare products (Elastoplast, Eucerin) are essential consumer staples with strong pricing power.' },
+        { icon: '💰', text: '<strong>Pricing Power:</strong> Beiersdorf can pass through cost increases to consumers, protecting margins during inflationary periods.' },
+        { icon: '🌍', text: '<strong>Global Diversification:</strong> Beiersdorf\'s revenue is globally diversified, reducing exposure to any single regional commodity shock.' },
+      ],
+      secondOrder: [
+        { icon: '🛡️', text: '<strong>Defensive Positioning:</strong> Consumer staples outperform during economic downturns, providing portfolio protection.' },
+        { icon: '📈', text: '<strong>Margin Resilience:</strong> Beiersdorf\'s high-margin consumer brands provide structural margin protection.' },
+        { icon: '🌟', text: '<strong>Brand Strength:</strong> Elastoplast and Eucerin are globally recognized brands with strong customer loyalty.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Exposure', pct: 5, color: 'var(--green-light)' },
+        { label: 'Commodity Exposure', pct: 8, color: 'var(--green-light)' },
+        { label: 'Pricing Power', pct: 85, color: 'var(--green-light)' },
+        { label: 'Margin Resilience', pct: 78, color: 'var(--green-light)' },
+      ],
+      fleetNote: 'Beiersdorf\'s manufacturing and supply chain are primarily located in Europe and North America. The company has minimal exposure to Hormuz-dependent supply chains.',
+    }
+  },
+  {
+    ticker: 'SOON SW', company: 'Sonova Holding', country: '🇨🇭 Switzerland',
+    mktCap: '€32.5bn', sector: 'Tech/Semis', position: 'LONG', weight: 'OW',
+    price: 'CHF 193.9', priceNum: 193.9, currency: 'CHF',
+    evEbitdaBase: 18.2, fcfYieldBase: 4.8, fcfDeltaBps: +12,
+    disruption: 'None — Demographic Tailwind',
+    thesis: 'Hearing aid market insulated; aging demographics drive growth.',
+    icon: '💼',
+    oilSensitivity: 6, alSensitivity: 8, fertSensitivity: 2,
+    modalData: {
+      position: 'LONG — OVERWEIGHT',
+      posClass: 'long',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '18.2×', cls: 'val-up' },
+        { label: 'FCF Yield (Stress)', value: '4.8%', cls: 'val-up' },
+        { label: 'FCF Δ vs Baseline', value: '+12 bps', cls: 'val-up' },
+        { label: 'Demographic Tailwind', value: 'Strong', cls: 'val-up' },
+      ],
+      firstOrder: [
+        { icon: '👂', text: '<strong>Hearing Aid Market Growth:</strong> Sonova\'s hearing aid business benefits from aging demographics in developed markets. Demand is insulated from commodity price shocks.' },
+        { icon: '📈', text: '<strong>Market Consolidation:</strong> Sonova is the global leader in hearing aids, with strong pricing power and market share.' },
+        { icon: '🌍', text: '<strong>Global Diversification:</strong> Sonova\'s revenue is globally diversified, reducing exposure to regional commodity shocks.' },
+      ],
+      secondOrder: [
+        { icon: '🏥', text: '<strong>Healthcare Tailwind:</strong> Aging populations in Europe and North America drive sustained demand for hearing aids.' },
+        { icon: '💰', text: '<strong>High Margins:</strong> Hearing aids have high gross margins (60%+), providing structural margin protection.' },
+        { icon: '🔬', text: '<strong>Technology Innovation:</strong> Sonova\'s R&D investments in digital hearing aids support premium pricing.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Exposure', pct: 3, color: 'var(--green-light)' },
+        { label: 'Commodity Exposure', pct: 6, color: 'var(--green-light)' },
+        { label: 'Demographic Tailwind', pct: 88, color: 'var(--green-light)' },
+        { label: 'Margin Expansion', pct: 72, color: 'var(--green-light)' },
+      ],
+      fleetNote: 'Sonova\'s manufacturing and supply chain are primarily located in Switzerland and Europe. The company has minimal exposure to Hormuz-dependent supply chains.',
+    }
+  },
+  {
+    ticker: 'GSK LN', company: 'GSK plc', country: '🇬🇧 United Kingdom',
+    mktCap: '€38.7bn', sector: 'Healthcare/Agri', position: 'LONG', weight: 'OW',
+    price: 'GBp 1983', priceNum: 1983, currency: 'GBP',
+    evEbitdaBase: 9.4, fcfYieldBase: 7.8, fcfDeltaBps: +45,
+    disruption: 'None — Defensive Pharma',
+    thesis: 'Pharmaceutical demand insulated; dividend yield attractive.',
+    icon: '🏥',
+    oilSensitivity: 10, alSensitivity: 5, fertSensitivity: 8,
+    modalData: {
+      position: 'LONG — OVERWEIGHT',
+      posClass: 'long',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '9.4×', cls: 'val-up' },
+        { label: 'FCF Yield (Stress)', value: '7.8%', cls: 'val-up' },
+        { label: 'FCF Δ vs Baseline', value: '+45 bps', cls: 'val-up' },
+        { label: 'Dividend Yield', value: '4.2%', cls: 'val-up' },
+      ],
+      firstOrder: [
+        { icon: '💊', text: '<strong>Pharmaceutical Demand Resilience:</strong> GSK\'s pharmaceutical portfolio is insulated from commodity price shocks. Demand for vaccines and treatments is inelastic.' },
+        { icon: '💰', text: '<strong>Dividend Yield:</strong> GSK\'s 4.2% dividend yield provides attractive income during uncertain times.' },
+        { icon: '🌍', text: '<strong>Global Diversification:</strong> GSK\'s revenue is globally diversified, reducing exposure to regional commodity shocks.' },
+      ],
+      secondOrder: [
+        { icon: '🏥', text: '<strong>Healthcare Demand Stability:</strong> Pharmaceutical demand is stable and predictable, providing cash flow visibility.' },
+        { icon: '📈', text: '<strong>Margin Resilience:</strong> GSK\'s high-margin pharmaceutical business provides structural margin protection.' },
+        { icon: '🔬', text: '<strong>R&D Pipeline:</strong> GSK\'s robust R&D pipeline supports long-term growth and pricing power.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Exposure', pct: 8, color: 'var(--green-light)' },
+        { label: 'Commodity Exposure', pct: 10, color: 'var(--green-light)' },
+        { label: 'Demand Stability', pct: 92, color: 'var(--green-light)' },
+        { label: 'Dividend Safety', pct: 88, color: 'var(--green-light)' },
+      ],
+      fleetNote: 'GSK\'s manufacturing and supply chain are primarily located in the UK, Europe, and North America. The company has minimal exposure to Hormuz-dependent supply chains.',
+    }
+  },
+  {
+    ticker: 'SAN FP', company: 'Sanofi SA', country: '🇫🇷 France',
+    mktCap: '€68.4bn', sector: 'Healthcare/Agri', position: 'LONG', weight: 'OW',
+    price: '€75.07', priceNum: 75.07, currency: 'EUR',
+    evEbitdaBase: 10.2, fcfYieldBase: 6.4, fcfDeltaBps: +38,
+    disruption: 'None — Defensive Pharma',
+    thesis: 'Large-cap pharma with vaccine exposure; defensive positioning.',
+    icon: '🏥',
+    oilSensitivity: 12, alSensitivity: 6, fertSensitivity: 10,
+    modalData: {
+      position: 'LONG — OVERWEIGHT',
+      posClass: 'long',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '10.2×', cls: 'val-up' },
+        { label: 'FCF Yield (Stress)', value: '6.4%', cls: 'val-up' },
+        { label: 'FCF Δ vs Baseline', value: '+38 bps', cls: 'val-up' },
+        { label: 'Vaccine Exposure', value: 'High', cls: 'val-up' },
+      ],
+      firstOrder: [
+        { icon: '💊', text: '<strong>Vaccine Portfolio:</strong> Sanofi\'s vaccine business (Pasteur division) is a key growth driver with strong pricing power and demand resilience.' },
+        { icon: '💰', text: '<strong>Dividend Yield:</strong> Sanofi\'s dividend yield provides attractive income during uncertain times.' },
+        { icon: '🌍', text: '<strong>Global Diversification:</strong> Sanofi\'s revenue is globally diversified, reducing exposure to regional commodity shocks.' },
+      ],
+      secondOrder: [
+        { icon: '🏥', text: '<strong>Healthcare Demand Stability:</strong> Pharmaceutical and vaccine demand is stable and predictable, providing cash flow visibility.' },
+        { icon: '📈', text: '<strong>Margin Resilience:</strong> Sanofi\'s high-margin pharmaceutical business provides structural margin protection.' },
+        { icon: '🔬', text: '<strong>R&D Pipeline:</strong> Sanofi\'s robust R&D pipeline supports long-term growth and pricing power.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Exposure', pct: 10, color: 'var(--green-light)' },
+        { label: 'Commodity Exposure', pct: 12, color: 'var(--green-light)' },
+        { label: 'Demand Stability', pct: 90, color: 'var(--green-light)' },
+        { label: 'Dividend Safety', pct: 85, color: 'var(--green-light)' },
+      ],
+      fleetNote: 'Sanofi\'s manufacturing and supply chain are primarily located in France, Europe, and North America. The company has minimal exposure to Hormuz-dependent supply chains.',
+    }
+  },
+  {
+    ticker: 'BAYN GY', company: 'Bayer AG', country: '🇩🇪 Germany',
+    mktCap: '€54.2bn', sector: 'Healthcare/Agri', position: 'SHORT', weight: 'UW',
+    price: '€38.49', priceNum: 38.49, currency: 'EUR',
+    evEbitdaBase: 9.8, fcfYieldBase: 2.1, fcfDeltaBps: -185,
+    disruption: 'Fertilizer / Agri Shock',
+    thesis: 'Agribusiness division faces fertilizer input cost shock; margin compression.',
+    icon: '🌾',
+    oilSensitivity: 25, alSensitivity: 18, fertSensitivity: 80,
+    modalData: {
+      position: 'SHORT — UNDERWEIGHT',
+      posClass: 'short',
+      keyMetrics: [
+        { label: 'EV/EBITDA (Stress)', value: '9.8×', cls: 'val-down' },
+        { label: 'FCF Yield (Stress)', value: '2.1%', cls: 'val-down' },
+        { label: 'FCF Δ vs Baseline', value: '-185 bps', cls: 'val-down' },
+        { label: 'Fert Input Cost Rise', value: '+45%', cls: 'val-down' },
+      ],
+      firstOrder: [
+        { icon: '🌾', text: '<strong>Agribusiness Exposure:</strong> Bayer\'s Crop Science division is heavily exposed to fertilizer input costs. A 45% spike in ammonia/urea prices directly compresses margins.' },
+        { icon: '📉', text: '<strong>Farmer Demand Destruction:</strong> Higher fertilizer costs will reduce farmer demand for Bayer\'s seed and crop protection products, impacting revenue.' },
+        { icon: '💸', text: '<strong>Margin Compression:</strong> Bayer cannot pass through fertilizer cost increases to farmers in a demand-constrained environment. FCF Yield is modelled to decline to 2.1%.' },
+      ],
+      secondOrder: [
+        { icon: '🌍', text: '<strong>Global Agricultural Slowdown:</strong> Higher input costs will reduce global agricultural activity, impacting Bayer\'s order book.' },
+        { icon: '🚜', text: '<strong>Farmer Profitability Squeeze:</strong> Farmers facing margin pressure will reduce spending on seeds and crop protection products.' },
+        { icon: '⚡', text: '<strong>Supply Chain Disruption:</strong> Bayer\'s supply chain for fertilizer-related products is partially dependent on Gulf region suppliers, creating additional logistics costs.' },
+      ],
+      facilities: [
+        { label: 'Hormuz Route Exposure', pct: 38, color: 'var(--orange)' },
+        { label: 'Fert Input Exposure', pct: 92, color: 'var(--red-light)' },
+        { label: 'Farmer Demand Risk', pct: 75, color: 'var(--red-light)' },
+        { label: 'Margin Compression', pct: 68, color: 'var(--red-light)' },
+      ],
+      fleetNote: 'Bayer\'s agribusiness supply chain is exposed to fertilizer sourcing from Gulf region suppliers. The Hormuz blockade has elevated fertilizer costs by 45%, directly impacting Bayer\'s margin profile.',
+    }
+  }
+];
+
+const BASE_WEIGHTS = {
+  'YAR NO': 3.5, 'BAS GY': -4.2, 'SOLB BB': -2.1, 'DHL GY': 4.8, 'VOLVB SS': -4.5, 'ALTR FP': -2.0,
+  'ASM NA': 5.2, 'BEIERS NA': 3.8, 'SOON SW': 3.1, 'GSK LN': 4.2, 'SAN FP': 4.5, 'BAYN GY': -3.3
+};
+
+/* ════════════════════════════════════════════════════════════════
+   RENDER FUNCTIONS
+════════════════════════════════════════════════════════════════ */
+
+function renderTicker() {
+  const track = document.getElementById('ticker-track');
+  let html = '';
+  for (let pass = 0; pass < 2; pass++) {
+    STOCKS.forEach(s => {
+      const chg = s.position === 'LONG' ? '+' : '-';
+      const chgClass = s.position === 'LONG' ? 'up' : 'down';
+      const chgVal = (Math.random() * 2.8 + 0.2).toFixed(2);
+      html += `
+        <div class="ticker-item" onclick="openModal('${s.ticker}')">
+          <span class="t-sym">${s.ticker}</span>
+          <span class="t-price">${s.price}</span>
+          <span class="t-chg ${chgClass}">${chg}${chgVal}%</span>
+          <span class="t-pos ${s.position.toLowerCase()}">${s.position}</span>
+        </div>
+      `;
+    });
+  }
+  track.innerHTML = html;
+}
+
+function renderMasterTable() {
+  const tbody = document.getElementById('master-tbody');
+  let html = '';
+  STOCKS.forEach(s => {
+    const posClass = s.position === 'LONG' ? 'td-pos-long' : 'td-pos-short';
+    const weightClass = s.weight === 'OW' ? 'td-weight-ow' : 'td-weight-uw';
+    const fcfClass = s.fcfDeltaBps > 0 ? 'td-up' : 'td-down';
+    html += `
+      <tr onclick="openModal('${s.ticker}')">
+        <td class="td-ticker">${s.ticker}</td>
+        <td>${s.company}</td>
+        <td>${s.country}</td>
+        <td class="num">${s.mktCap}</td>
+        <td>${s.sector}</td>
+        <td><span class="${posClass}">${s.position}</span></td>
+        <td><span class="${weightClass}">${s.weight}</span></td>
+        <td class="num">${s.price}</td>
+        <td class="num">${s.evEbitdaBase.toFixed(1)}×</td>
+        <td class="num">${s.fcfYieldBase.toFixed(1)}%</td>
+        <td class="num ${fcfClass}">${s.fcfDeltaBps > 0 ? '+' : ''}${s.fcfDeltaBps} bps</td>
+        <td>${s.disruption}</td>
+        <td>${s.thesis}</td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = html;
+}
+
+function renderHeatmap() {
+  const grid = document.getElementById('heatmap-grid');
+  let html = '';
+  html += '<div class="heatmap-cell header"></div>';
+  html += '<div class="heatmap-cell header">Oil Sensitivity</div>';
+  html += '<div class="heatmap-cell header">Al Sensitivity</div>';
+  html += '<div class="heatmap-cell header">Fert Sensitivity</div>';
+  STOCKS.forEach(s => {
+    html += `<div class="heatmap-cell row-label">${s.ticker}</div>`;
+    html += `<div class="heatmap-cell data ${getHeatClass(s.oilSensitivity)}">${s.oilSensitivity}%</div>`;
+    html += `<div class="heatmap-cell data ${getHeatClass(s.alSensitivity)}">${s.alSensitivity}%</div>`;
+    html += `<div class="heatmap-cell data ${getHeatClass(s.fertSensitivity)}">${s.fertSensitivity}%</div>`;
+  });
+  grid.innerHTML = html;
+}
+
+function getHeatClass(val) {
+  if (val < 25) return 'heat-cold';
+  if (val < 50) return 'heat-cool';
+  if (val < 75) return 'heat-warm';
+  return 'heat-hot';
+}
+
+function renderPillarCards() {
+  const sectors = {
+    'pillar-chemicals': STOCKS.slice(0, 3),
+    'pillar-industrials': STOCKS.slice(3, 6),
+    'pillar-tech': STOCKS.slice(6, 9),
+    'pillar-healthcare': STOCKS.slice(9, 12)
+  };
+
+  Object.entries(sectors).forEach(([id, stocks]) => {
+    const container = document.getElementById(id);
+    let html = '';
+    stocks.forEach(s => {
+      html += `
+        <div class="pillar-card" onclick="openModal('${s.ticker}')">
+          <div class="pc-ticker">${s.ticker}</div>
+          <div class="pc-company">${s.company}</div>
+          <div class="pc-metrics">
+            <div class="pc-metric">
+              <div class="pcm-label">EV/EBITDA</div>
+              <div class="pcm-value">${s.evEbitdaBase.toFixed(1)}×</div>
+            </div>
+            <div class="pc-metric">
+              <div class="pcm-label">FCF Yield</div>
+              <div class="pcm-value">${s.fcfYieldBase.toFixed(1)}%</div>
+            </div>
+          </div>
+          <div class="pc-thesis">${s.thesis}</div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  });
+}
+
+function renderReallocation() {
+  const grid = document.getElementById('realloc-grid');
+  const sectors = {
+    'Chemicals': STOCKS.slice(0, 3),
+    'Industrials': STOCKS.slice(3, 6),
+    'Tech/Semis': STOCKS.slice(6, 9),
+    'Healthcare/Agri': STOCKS.slice(9, 12)
+  };
+
+  let html = '';
+  Object.entries(sectors).forEach(([sectorName, stocks]) => {
+    html += `<div class="realloc-card">`;
+    html += `<div class="realloc-card-title">${sectorName} <span class="badge">REALLOC</span></div>`;
+    stocks.forEach(s => {
+      const baseWeight = BASE_WEIGHTS[s.ticker];
+      const stressWeight = calculateStressWeight(s, baseWeight);
+      const change = stressWeight - baseWeight;
+      const changeClass = change > 0.2 ? 'increased' : change < -0.2 ? 'decreased' : 'neutral';
+      const arrow = change > 0.2 ? '↑' : change < -0.2 ? '↓' : '→';
+      html += `<div class="realloc-stock-row">`;
+      html += `<span class="realloc-ticker">${s.ticker}</span>`;
+      html += `<div class="realloc-weights">`;
+      html += `<div class="realloc-weight-box"><div class="realloc-weight-label">Base</div><div class="realloc-weight-val">${baseWeight.toFixed(1)}%</div></div>`;
+      html += `<div class="realloc-arrow">${arrow}</div>`;
+      html += `<div class="realloc-weight-box"><div class="realloc-weight-label">Stress</div><div class="realloc-weight-val ${changeClass}">${stressWeight.toFixed(1)}%</div></div>`;
+      html += `</div></div>`;
+    });
+    html += `<div class="realloc-summary"><strong>Sector Objective:</strong> Maintain factor neutrality while reducing exposure to high-sensitivity names. Rebalance quarterly or upon 50 bps portfolio drift.</div>`;
+    html += `</div>`;
+  });
+  grid.innerHTML = html;
+}
+
+function calculateStressWeight(stock, baseWeight) {
+  const avgSensitivity = (stock.oilSensitivity + stock.alSensitivity + stock.fertSensitivity) / 3;
+  const stressMultiplier = 1 - (avgSensitivity / 100) * 0.4;
+  if (stock.position === 'LONG') {
+    return baseWeight * stressMultiplier;
+  } else {
+    return baseWeight * (1 + (avgSensitivity / 100) * 0.3);
+  }
+}
+
+let networkNodes = [];
+let networkHoveredNode = null;
+
+function renderNetwork() {
+  const canvas = document.getElementById('network-canvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  
+  canvas.width = canvas.offsetWidth * dpr;
+  canvas.height = canvas.offsetHeight * dpr;
+  ctx.scale(dpr, dpr);
+  
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+
+  ctx.fillStyle = 'rgba(13, 31, 53, 0.5)';
+  ctx.fillRect(0, 0, w, h);
+
+  const rootX = w / 2, rootY = 60;
+  networkNodes = [];
+  networkNodes.push({ x: rootX, y: rootY, r: 20, label: 'HORMUZ\nBLOCKADE', color: '#D69E2E', type: 'root' });
+
+  const firstOrderY = 200;
+  const firstOrderX = [w / 4, w / 2, (3 * w) / 4];
+  const firstOrderLabels = ['Oil/Feedstock', 'Aluminium', 'Fertilizers'];
+  firstOrderX.forEach((x, i) => {
+    networkNodes.push({ x, y: firstOrderY, r: 18, label: firstOrderLabels[i], color: '#2F855A', type: 'first' });
+    drawLine(ctx, rootX, rootY + 20, x, firstOrderY - 18, '#2F855A');
+  });
+
+  const secondOrderY = 380;
+  const spacing = w / (STOCKS.length + 1);
+  STOCKS.forEach((s, idx) => {
+    const x = spacing * (idx + 1);
+    const vectorIdx = Math.floor(idx / 3);
+    const sourceX = firstOrderX[vectorIdx];
+    const riskColor = s.position === 'LONG' ? '#4A9EFF' : '#C53030';
+    networkNodes.push({ x, y: secondOrderY, r: 12, label: s.ticker, color: riskColor, type: 'second', stock: s });
+    drawLine(ctx, sourceX, firstOrderY + 18, x, secondOrderY - 12, riskColor, 0.4);
+  });
+
+  networkNodes.forEach(node => {
+    const isHovered = node === networkHoveredNode;
+    drawNode(ctx, node.x, node.y, node.r, node.color, node.label, isHovered);
+  });
+
+  ctx.strokeStyle = 'rgba(30, 58, 95, 0.1)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < w; i += 40) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, h);
+    ctx.stroke();
+  }
+  for (let i = 0; i < h; i += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(w, i);
+    ctx.stroke();
+  }
+}
+
+function drawNode(ctx, x, y, r, color, label, isHovered) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  
+  ctx.strokeStyle = isHovered ? '#FFD700' : 'rgba(232, 237, 245, 0.3)';
+  ctx.lineWidth = isHovered ? 3 : 2;
+  ctx.stroke();
+
+  if (isHovered) {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.fillStyle = '#E8EDF5';
+  ctx.font = 'bold 9px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const lines = label.split('\n');
+  lines.forEach((line, i) => {
+    ctx.fillText(line, x, y + (i - (lines.length - 1) / 2) * 10);
+  });
+}
+
+function drawLine(ctx, x1, y1, x2, y2, color, alpha = 0.6) {
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+document.getElementById('network-canvas').addEventListener('mousemove', (e) => {
+  const canvas = document.getElementById('network-canvas');
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  let hoveredNode = null;
+  for (let node of networkNodes) {
+    const dist = Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2);
+    if (dist <= node.r + 5) {
+      hoveredNode = node;
+      break;
+    }
+  }
+
+  if (hoveredNode !== networkHoveredNode) {
+    networkHoveredNode = hoveredNode;
+    renderNetwork();
+    
+    if (hoveredNode) {
+      const tooltip = document.getElementById('network-tooltip');
+      let tooltipText = hoveredNode.label.replace('\n', ' ');
+      if (hoveredNode.stock) {
+        tooltipText = `${hoveredNode.stock.ticker} — ${hoveredNode.stock.company}`;
+      }
+      tooltip.textContent = tooltipText;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 10) + 'px';
+      tooltip.style.top = (e.clientY + 10) + 'px';
+    }
+  } else if (hoveredNode) {
+    const tooltip = document.getElementById('network-tooltip');
+    tooltip.style.left = (e.clientX + 10) + 'px';
+    tooltip.style.top = (e.clientY + 10) + 'px';
+  }
+});
+
+document.getElementById('network-canvas').addEventListener('mouseleave', () => {
+  networkHoveredNode = null;
+  renderNetwork();
+  document.getElementById('network-tooltip').style.display = 'none';
+});
+
+/* ════════════════════════════════════════════════════════════════
+   NAVIGATION & MODALS
+════════════════════════════════════════════════════════════════ */
+
+function toggleNav() {
+  document.getElementById('sidenav').classList.toggle('collapsed');
+}
+
+function toggleSection(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const section = event.currentTarget.parentElement;
+  section.classList.toggle('open');
+}
+
+function scrollToSection(sectionId, event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+  }
+}
+
+function openModal(ticker) {
+  const stock = STOCKS.find(s => s.ticker === ticker);
+  if (!stock) return;
+  const md = stock.modalData;
+  document.getElementById('modal-ticker').textContent = ticker;
+  document.getElementById('modal-company').textContent = stock.company;
+  
+  let html = `
+    <div class="modal-section">
+      <div class="modal-section-title">📊 Position & Key Metrics</div>
+      <div style="background:var(--navy-card);border:1px solid var(--navy-border);border-radius:3px;padding:12px;margin-bottom:12px;">
+        <div style="font-weight:700;color:var(--text-primary);margin-bottom:8px;">Position: ${md.position}</div>
+      </div>
+      <div class="modal-grid-2">
+        ${md.keyMetrics.map(m => `
+          <div class="modal-metric-card">
+            <div class="mmc-label">${m.label}</div>
+            <div class="mmc-value" style="color:${m.cls === 'val-up' ? 'var(--green-light)' : 'var(--red-light)'};">${m.value}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">🔗 First-Order Dependencies</div>
+      <ul class="dep-list">
+        ${md.firstOrder.map(d => `
+          <li>
+            <span class="dep-icon">${d.icon}</span>
+            <span>${d.text}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">🌐 Second-Order Dependencies & Contagion</div>
+      <ul class="dep-list">
+        ${md.secondOrder.map(d => `
+          <li>
+            <span class="dep-icon">${d.icon}</span>
+            <span>${d.text}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">⚡ Facility Energy & Logistics Exposure Profile</div>
+      ${md.facilities.map(f => `
+        <div class="exposure-bar-row">
+          <span class="exposure-bar-label">${f.label}</span>
+          <div class="exposure-bar-wrap">
+            <div class="exposure-bar-fill" style="width:${f.pct}%;background:${f.color};"></div>
+          </div>
+          <span class="exposure-bar-val" style="color:${f.color};">${f.pct}%</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">🚢 Maritime Fleet Tracking Linkage</div>
+      <div style="background:var(--navy-card);border:1px solid var(--navy-border);border-radius:3px;padding:12px;font-size:11.5px;color:var(--text-secondary);line-height:1.7;">
+        ${md.fleetNote}
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModalBtn();
+}
+
+function closeModalBtn() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function updateStress() {
+  const oil  = parseFloat(document.getElementById('sl-oil').value);
+  const al   = parseFloat(document.getElementById('sl-al').value);
+  const fert = parseFloat(document.getElementById('sl-fert').value) / 100;
+  document.getElementById('sv-oil').textContent  = oil;
+  document.getElementById('sv-al').textContent   = al;
+  document.getElementById('sv-fert').textContent = fert.toFixed(2);
+  
+  const setInd = (id, val, base, range) => {
+    const el = document.getElementById(id);
+    const pct = (val - base) / range;
+    if (pct < 0.15 && pct > -0.15) { el.className = 'stress-indicator stress-mid'; el.textContent = 'BASELINE'; }
+    else if (pct >= 0.15 && pct < 0.5) { el.className = 'stress-indicator stress-mid'; el.textContent = 'ELEVATED'; }
+    else if (pct >= 0.5) { el.className = 'stress-indicator stress-high'; el.textContent = 'HIGH STRESS'; }
+    else { el.className = 'stress-indicator stress-easing'; el.textContent = 'EASING'; }
+  };
+  setInd('si-oil', oil, 98, 70);
+  setInd('si-al', al, 32, 60);
+  setInd('si-fert', fert * 100, 145, 150);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════════════ */
+
+window.addEventListener('load', () => {
+  renderTicker();
+  renderMasterTable();
+  renderHeatmap();
+  renderNetwork();
+  renderPillarCards();
+  renderReallocation();
+});
+
+window.addEventListener('resize', renderNetwork);
+</script>
+</body>
+</html>
